@@ -11,14 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('motor', function (Blueprint $table) {
+        Schema::create('motors', function (Blueprint $table) {
             $table->id();
             $table->foreignId('pelanggan_id')->constrained('pelanggans')->onDelete('cascade');
             $table->string('merk');
-            $table->string('tipe');
+            $table->string('model');
             $table->year('tahun');
             $table->string('warna');
             $table->string('plat_nomor', 20)->unique();
+            $table->string('status');
             $table->string('nomor_rangka')->unique();
             $table->string('nomor_mesin')->unique();
             $table->text('spesifikasi_mesin')->nullable();
@@ -31,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('motor');
+        Schema::dropIfExists('motors');
     }
 };

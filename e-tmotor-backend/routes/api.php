@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\MotorController;
+use App\Http\Controllers\Api\LayananController;
+use App\Http\Controllers\Api\PelangganController;
+use App\Http\Controllers\Api\ReservasiController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -13,6 +16,7 @@ use Illuminate\Support\Facades\Route;
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/layanan', [LayananController::class, 'index']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -24,4 +28,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Motor
     Route::apiResource('motor', MotorController::class);
+
+    // Pelanggan
+    Route::apiResource('pelanggan', PelangganController::class);
+
+    // Reservasi
+    Route::apiResource('reservasi', ReservasiController::class)->only(['index', 'store']);
 });

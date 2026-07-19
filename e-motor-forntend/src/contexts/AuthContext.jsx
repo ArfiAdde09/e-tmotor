@@ -77,11 +77,27 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const updateProfile = async (updatedData) => {
+        try {
+            const response = await api.put('/profile', updatedData);
+            const { data } = response.data;
+            localStorage.setItem('user', JSON.stringify(data));
+            setUser(data);
+            toast.success('Profil berhasil diperbarui!');
+            return { success: true };
+        } catch (error) {
+            const message = error.response?.data?.message || 'Update profil gagal, coba lagi.';
+            toast.error(message);
+            return { success: false };
+        }
+    };
+
     const value = {
         user,
         login,
         register,
         logout,
+        updateProfile,
         loading,
         isAuthenticated: !!user,
         isAdmin: user?.role === 'admin',
