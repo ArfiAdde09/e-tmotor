@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('motor', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('pelanggan_id')->constrained('pelanggan')->onDelete('cascade');
+            $table->foreignId('pelanggan_id')->constrained('pelanggans')->onDelete('cascade');
             $table->string('merk');
             $table->string('tipe');
             $table->year('tahun');
