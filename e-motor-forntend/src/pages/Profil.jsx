@@ -4,6 +4,7 @@ import api from '../services/api';
 import toast from 'react-hot-toast';
 import Modal from '../components/Modal';
 import MotorForm from '../components/MotorForm';
+import ChangePasswordForm from '../components/ChangePasswordForm';
 import { PencilIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 export default function Profil() {
@@ -17,9 +18,12 @@ export default function Profil() {
   // State for Motor CRUD
   const [motors, setMotors] = useState([]);
   const [loadingMotors, setLoadingMotors] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMotorModalOpen, setIsMotorModalOpen] = useState(false);
+  const [isSubmittingMotor, setIsSubmittingMotor] = useState(false);
   const [editingMotor, setEditingMotor] = useState(null);
+
+  // State for Change Password Modal
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
   // Sync profile form with user context
   useEffect(() => {
@@ -53,18 +57,18 @@ export default function Profil() {
   };
 
   // --- Motor CRUD Handlers ---
-  const handleOpenModal = (motor = null) => {
+  const handleOpenMotorModal = (motor = null) => {
     setEditingMotor(motor);
-    setIsModalOpen(true);
+    setIsMotorModalOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
+  const handleCloseMotorModal = () => {
+    setIsMotorModalOpen(false);
     setEditingMotor(null);
   };
 
   const handleMotorSubmit = async (formData) => {
-    setIsSubmitting(true);
+    setIsSubmittingMotor(true);
     const toastId = toast.loading(editingMotor ? 'Memperbarui motor...' : 'Menambahkan motor...');
     try {
       if (editingMotor) {
@@ -74,12 +78,12 @@ export default function Profil() {
       }
       toast.success('Data motor berhasil disimpan!', { id: toastId });
       fetchMotors();
-      handleCloseModal();
+      handleCloseMotorModal();
     } catch (error) {
       const message = error.response?.data?.message || 'Gagal menyimpan data motor.';
       toast.error(message, { id: toastId });
     } finally {
-      setIsSubmitting(false);
+      setIsSubmittingMotor(false);
     }
   };
 
@@ -130,9 +134,14 @@ export default function Profil() {
                 placeholder="Alamat lengkap Anda"
                 className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-white focus:ring-2 focus:ring-primary outline-none" />
             </div>
-            <button type="submit" className="w-full bg-primary hover:bg-primary-dark text-white py-2 rounded-lg transition">
-              Simpan Perubahan Profil
-            </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <button type="submit" className="w-full bg-primary hover:bg-primary-dark text-white py-2 rounded-lg transition">
+                Simpan Perubahan Profil
+              </button>
+              <button type="button" onClick={() => setIsPasswordModalOpen(true)} className="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg transition">
+                Ubah Password
+              </button>
+            </div>
           </form>
         </div>
       </div>
@@ -140,7 +149,7 @@ export default function Profil() {
       <div>
         <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-white">Data Motor</h2>
-            <button onClick={() => handleOpenModal()} className="flex items-center space-x-2 bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg transition">
+            <button onClick={() => handleOpenMotorModal()} className="flex items-center space-x-2 bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg transition">
                 <PlusIcon className="h-5 w-5" />
                 <span>Tambah Motor</span>
             </button>
@@ -159,7 +168,7 @@ export default function Profil() {
                                 <p className="text-sm text-gray-400">{motor.plat_nomor}</p>
                             </div>
                             <div className="flex space-x-2">
-                                <button onClick={() => handleOpenModal(motor)} className="p-2 text-gray-400 hover:text-primary transition"><PencilIcon className="h-5 w-5"/></button>
+                                <button onClick={() => handleOpenMotorModal(motor)} className="p-2 text-gray-400 hover:text-primary transition"><PencilIcon className="h-5 w-5"/></button>
                                 <button onClick={() => handleDeleteMotor(motor.id)} className="p-2 text-gray-400 hover:text-red-500 transition"><TrashIcon className="h-5 w-5"/></button>
                             </div>
                         </li>
@@ -169,13 +178,17 @@ export default function Profil() {
         </div>
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingMotor ? 'Edit Data Motor' : 'Tambah Motor Baru'}>
+      <Modal isOpen={isMotorModalOpen} onClose={handleCloseMotorModal} title={editingMotor ? 'Edit Data Motor' : 'Tambah Motor Baru'}>
         <MotorForm 
             onSubmit={handleMotorSubmit} 
-            onCancel={handleCloseModal}
+            onCancel={handleCloseMotorModal}
             initialData={editingMotor}
-            isSubmitting={isSubmitting}
+            isSubmitting={isSubmittingMotor}
         />
+      </Modal>
+
+      <Modal isOpen={isPasswordModalOpen} onClose={() => setIsPasswordModalOpen(false)} title="Ubah Password">
+        <ChangePasswordForm closeModal={() => setIsPasswordModalOpen(false)} />
       </Modal>
     </div>
   );

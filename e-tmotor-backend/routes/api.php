@@ -33,5 +33,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('pelanggan', PelangganController::class);
 
     // Reservasi
-    Route::apiResource('reservasi', ReservasiController::class)->only(['index', 'store']);
+    Route::apiResource('reservasi', ReservasiController::class);
 });

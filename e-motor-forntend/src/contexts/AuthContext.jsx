@@ -11,19 +11,24 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        const storedUser = localStorage.getItem('user');
-
-        if (token && storedUser) {
-            try {
-                const userData = JSON.parse(storedUser);
-                setUser(userData);
-            } catch {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
+        const validateSession = async () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                try {
+                    // No need to set header here, Axios interceptor does it
+                    const response = await api.get('/profile');
+                    setUser(response.data.data);
+                } catch (error) {
+                    // Token is invalid or expired
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    setUser(null);
+                }
             }
-        }
-        setLoading(false);
+            setLoading(false);
+        };
+
+        validateSession();
     }, []);
 
     const login = async (email, password) => {
@@ -32,6 +37,7 @@ export const AuthProvider = ({ children }) => {
             const { data } = response.data;
 
             localStorage.setItem('token', data.token);
+            // We store the user object for immediate UI update, but session validation will re-fetch it.
             localStorage.setItem('user', JSON.stringify(data.user));
 
             setUser(data.user);
@@ -92,16 +98,37 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const changePassword = async (passwordData) => {
+        try {
+            await api.put('/change-password', passwordData);
+            toast.success('Password berhasil diubah!');
+            return { success: true };
+        } catch (error) {
+            // Handle validation errors specifically
+            if (error.response && error.response.status === 422) {
+                const errors = error.response.data.errors;
+                // Display first error message
+                const firstError = Object.values(errors)[0][0];
+                toast.error(firstError);
+            } else {
+                const message = error.response?.data?.message || 'Gagal mengubah password, coba lagi.';
+                toast.error(message);
+            }
+            return { success: false };
+        }
+    };
+
     const value = {
         user,
         login,
         register,
         logout,
         updateProfile,
+        changePassword,
         loading,
         isAuthenticated: !!user,
         isAdmin: user?.role === 'admin',
-        isCustomer: user?.role === 'pelanggan' || user?.role === 'customer',
+        isCustomer: user?.role === 'pelanggan',
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

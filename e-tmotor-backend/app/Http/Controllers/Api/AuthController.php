@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\DB;
 
 class AuthController extends Controller
 {
@@ -22,34 +23,45 @@ class AuthController extends Controller
      */
     public function register(RegisterRequest $request): JsonResponse
     {
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'phone' => $request->phone,
-            'address' => $request->address,
-            'role' => 'pelanggan',
-        ]);
+        try {
+            $user = DB::transaction(function () use ($request) {
+                $user = User::create([
+                    'name' => $request->name,
+                    'email' => $request->email,
+                    'password' => Hash::make($request->password),
+                    'phone' => $request->phone,
+                    'address' => $request->address,
+                    'role' => 'pelanggan',
+                ]);
 
-        // Create pelanggan profile
-        Pelanggan::create([
-            'user_id' => $user->id,
-            'nama_lengkap' => $request->name,
-            'telepon' => $request->phone,
-            'alamat' => $request->address,
-        ]);
+                // Create pelanggan profile
+                Pelanggan::create([
+                    'user_id' => $user->id,
+                    'nama_lengkap' => $request->name,
+                    'telepon' => $request->phone,
+                    'alamat' => $request->address,
+                ]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+                return $user;
+            });
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Registrasi berhasil',
-            'data' => [
-                'user' => new UserResource($user),
-                'token' => $token,
-                'role' => $user->role,
-            ],
-        ], 201);
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Registrasi berhasil',
+                'data' => [
+                    'user' => new UserResource($user),
+                    'token' => $token,
+                    'role' => $user->role,
+                ],
+            ], 201);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Registrasi gagal: ' . $th->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -105,18 +117,21 @@ class AuthController extends Controller
     public function updateProfile(UpdateProfileRequest $request): UserResource
     {
         $user = $request->user();
-        $user->update($request->validated());
 
-        // Update pelanggan profile if exists
-        if ($user->pelanggan) {
-            $user->pelanggan->update([
-                'nama_lengkap' => $request->name ?? $user->name,
-                'telepon' => $request->phone ?? $user->phone,
-                'alamat' => $request->address ?? $user->address,
-            ]);
-        }
+        DB::transaction(function () use ($user, $request) {
+            $user->update($request->validated());
 
-        return new UserResource($user);
+            // Update pelanggan profile if exists
+            if ($user->pelanggan) {
+                $user->pelanggan->update([
+                    'nama_lengkap' => $request->name ?? $user->name,
+                    'telepon' => $request->phone ?? $user->phone,
+                    'alamat' => $request->address ?? $user->address,
+                ]);
+            }
+        });
+
+        return new UserResource($user->fresh());
     }
 
     /**
